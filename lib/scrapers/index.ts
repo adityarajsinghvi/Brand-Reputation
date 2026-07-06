@@ -1,12 +1,5 @@
 import type { Platform, RawReview } from '../types';
 import { PLATFORMS } from '../types';
-import { scrapeAmazon } from './amazon';
-import { scrapeMyntra } from './myntra';
-import { scrapeFlipkart } from './flipkart';
-import { scrapeTrustpilot } from './trustpilot';
-import { scrapeGlassdoor } from './glassdoor';
-import { scrapeAmbitionBox } from './ambitionbox';
-import { scrapeReddit } from './reddit';
 
 export function detectPlatform(url: string): Platform | null {
   let host: string;
@@ -29,15 +22,28 @@ export function isSupportedPlatform(value: string): value is Platform {
   return (PLATFORMS as readonly string[]).includes(value);
 }
 
-const SCRAPERS: Record<Platform, (url: string) => Promise<RawReview[]>> = {
-  amazon: scrapeAmazon,
-  myntra: scrapeMyntra,
-  flipkart: scrapeFlipkart,
-  trustpilot: scrapeTrustpilot,
-  glassdoor: scrapeGlassdoor,
-  ambitionbox: scrapeAmbitionBox,
-  reddit: scrapeReddit,
-};
+type ScraperFn = (url: string) => Promise<RawReview[]>;
+
+// Load each scraper on demand so Playwright (Amazon/Trustpilot/Glassdoor) is never
+// pulled into the serverless bundle unless that platform is actually requested.
+async function loadScraper(platform: Platform): Promise<ScraperFn> {
+  switch (platform) {
+    case 'amazon':
+      return (await import('./amazon')).scrapeAmazon;
+    case 'myntra':
+      return (await import('./myntra')).scrapeMyntra;
+    case 'flipkart':
+      return (await import('./flipkart')).scrapeFlipkart;
+    case 'trustpilot':
+      return (await import('./trustpilot')).scrapeTrustpilot;
+    case 'glassdoor':
+      return (await import('./glassdoor')).scrapeGlassdoor;
+    case 'ambitionbox':
+      return (await import('./ambitionbox')).scrapeAmbitionBox;
+    case 'reddit':
+      return (await import('./reddit')).scrapeReddit;
+  }
+}
 
 export interface ScrapeOutcome {
   platform: Platform;
@@ -49,7 +55,8 @@ export interface ScrapeOutcome {
 
 export async function scrapeUrl(platform: Platform, url: string): Promise<ScrapeOutcome> {
   try {
-    const reviews = await SCRAPERS[platform](url);
+    const scraper = await loadScraper(platform);
+    const reviews = await scraper(url);
     if (!reviews || reviews.length === 0) {
       return { platform, url, status: 'failed', reviews: [], reason: 'No reviews found at this URL' };
     }

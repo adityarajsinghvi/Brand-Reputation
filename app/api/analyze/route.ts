@@ -13,6 +13,16 @@ const MAX_URLS_TOTAL = 15;
 const MAX_URLS_PER_PLATFORM = 3;
 
 export async function POST(request: NextRequest) {
+  try {
+    return await handleAnalyze(request);
+  } catch (err) {
+    console.error('POST /api/analyze failed', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handleAnalyze(request: NextRequest) {
   let body: { brandName?: string; brandUrl?: string; urls?: UrlInput[] };
   try {
     body = await request.json();

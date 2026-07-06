@@ -110,7 +110,15 @@ export default function Home() {
           urls: filledRows.map((r) => ({ platform: r.platform, url: r.url.trim() })),
         }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: { error?: string };
+      try {
+        data = JSON.parse(text) as { error?: string };
+      } catch {
+        throw new Error(
+          `Server error (${res.status}). Check Vercel function logs — redeploy after adding env vars if you just set them.`
+        );
+      }
       if (!res.ok) {
         throw new Error(data?.error || "Analysis failed");
       }

@@ -1,12 +1,20 @@
-import { chromium, type Browser, type Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 
 const REALISTIC_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+const SERVERLESS_BROWSER_MSG =
+  'Browser-based scraping (Amazon, Trustpilot, Glassdoor) is unavailable on serverless hosting — use Myntra, Flipkart, Reddit, or AmbitionBox, or run locally with npm run dev.';
+
 let browserPromise: Promise<Browser> | null = null;
 
-function getBrowser(): Promise<Browser> {
+async function getBrowser(): Promise<Browser> {
+  if (process.env.VERCEL) {
+    throw new Error(SERVERLESS_BROWSER_MSG);
+  }
+
   if (!browserPromise) {
+    const { chromium } = await import('playwright');
     browserPromise = chromium
       .launch({
         headless: true,

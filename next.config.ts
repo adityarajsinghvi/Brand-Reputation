@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Playwright ships browser binaries that must not be bundled into the serverless function.
+  serverExternalPackages: ["playwright"],
 };
 
 export default nextConfig;
