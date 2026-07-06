@@ -522,9 +522,24 @@ function ThemeRow({ theme, tone }: { theme: BrandReport["themes"][number]; tone:
   );
 }
 
-function ScoreGauge({ score }: { score: number }) {
+function ScoreGauge({ score }: { score: number | null }) {
   const r = 68;
   const c = 2 * Math.PI * r;
+
+  if (score === null) {
+    return (
+      <div className="relative w-40 h-40 shrink-0">
+        <svg width="160" height="160" viewBox="0 0 160 160" className="-rotate-90">
+          <circle cx="80" cy="80" r={r} stroke="var(--color-border)" strokeWidth="14" fill="none" />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-2xl font-bold text-text-dim">N/A</div>
+          <div className="text-[11px] text-text-dim uppercase tracking-wide">Health Score</div>
+        </div>
+      </div>
+    );
+  }
+
   const offset = c * (1 - score / 100);
   const color = score >= 78 ? "var(--color-positive)" : score >= 55 ? "var(--color-neutral)" : "var(--color-negative)";
   return (
